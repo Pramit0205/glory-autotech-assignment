@@ -22,7 +22,7 @@ const isValidString = (String) => {
         return /^\d{9}$/.test(experience)
     };
 const isValiddate=(date)=>{
-    return /^(0?[1-9]|[1-2][0-9]|3[01])[\/](0?[1-9]|1[0-2])[\/]\d{4}$/.test(date)
+    return   /([12]\d{3}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01]))/.test(date)
 }
 const isValidObjectId = (objectId) => {
     return mongoose.Types.ObjectId.isValid(objectId);
