@@ -49,7 +49,7 @@ const createEmploy = async function (req, res) {
 
         if (vfy.isEmptyVar(address)) return res.status(400).send({ status: false, Message: "Please provide address" })
         const addressObject = vfy.isValidJSONstr(address)
-        if (!addressObject) return res.status(400).send({ status: false, Message: "Address json you are providing is not in a valid format 🤦‍♂😂🤣" })
+        if (!addressObject) return res.status(400).send({ status: false, Message: "Address json you are providing is not in a valid format " })
 
 
         let { present, parmanent } = addressObject
@@ -67,7 +67,7 @@ const createEmploy = async function (req, res) {
         if (!parmanent.pincode || isNaN(parmanent.pincode)) return res.status(400).send({ status: false, Message: "Plz provide parmanent pincode" });
         if (!vfy.isValidPincode(parmanent.pincode)) return res.status(400).send({ status: false, Message: "Plz provide a valid pincode" });
 
-        //=================================Unique Db calls (Time saving)===============================================================>>
+        //Unique Db calls 
 
         let usedEmail = await employModel.findOne({ email });
         if (usedEmail) return res.status(400).send({ status: false, Message: "This email is already registerd" });
@@ -75,14 +75,14 @@ const createEmploy = async function (req, res) {
         let usedMobileNumber = await employModel.findOne({ phone });
         if (usedMobileNumber) return res.status(400).send({ status: false, Message: "This Mobile no. is already registerd" });
 
-        // ================================= qws file upload here 📷📷🖼 ==========================>>
+        // aws file upload 
         if (!vfy.acceptFileType(files[0], 'image/jpeg', 'image/png')) return res.status(400).send({ status: false, Message: "we accept jpg, jpeg or png as profile picture only" });
 
         const profilePicture = await uploadFile(files[0])
 
 
         const employrequestBody = { name, email, phone, documents: profilePicture, salary, dob, experience, joiningDate, address: addressObject }
-        // create employ ✅
+        // create employ 
         const newemploy = await employModel.create(employrequestBody);
 
         res.status(201).send({ status: true, message: `employ registered successfully`, data: newemploy });
