@@ -1,6 +1,6 @@
 const express = require('express');
-const {createEmploy}=require("../controller/controller");
-const {firstDay,updateAttendence,attendance}=require("../controller/attendenceController")
+const {createEmploy}=require("../controller/EmployController");
+const {firstDay,updateAttendence,getEmployDetails}=require("../controller/attendenceController")
 
 const router = express.Router();
 
@@ -11,7 +11,8 @@ router.post('/firstDay',firstDay)
 
 router.put("/updateAttendence/:employId",updateAttendence)
 
-router.post('/attendance/:employId',attendance)
+router.get('/getEmployDetails/:date',getEmployDetails)
+// router.post('/attendance/:employId',attendance)
 // router.put('/repeateAttendence/:employId',repeateAttendence)
 // router.put('/updateEmploy/:employId',updateEmploy)
 

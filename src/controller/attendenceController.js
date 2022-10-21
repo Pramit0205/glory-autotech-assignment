@@ -1,55 +1,8 @@
+const { find } = require("../model/attendanceModel");
 const attendanceModel = require("../model/attendanceModel");
-// const { findByIdAndUpdate } = require("../model/employModel");
 const employModel = require("../model/employModel")
 const vfy = require("../utils/validation")
 const ObjectId = require("mongoose").Types.ObjectId;
-
-// const creatAttendance = async function(req,res){
-//     try{
-//         let data=req.body
-//         let employId=req.params.employId
-//         console.log(employId)
-
-//         if (vfy.isEmptyObject(data)) return res.status(400).send({ status: false, Message: "Invalid request parameters, Please provide  details for attendence" })
-
-// // employ id validation
-//         if (vfy.isEmptyVar(employId)) return res.status(400).send({ status: false, message: "employId is required" });
-//         if (!vfy.isValidObjectId(employId)) return res.status(400).send({ status: false, message: "Not a valid employ id" });
-       
-//         let findEmploy = await employModel.findById(employId)
-//         if (!findEmploy) return res.status(404).send({ status: false, Message: "This id not in our database . Please register first" })
-
-//         let {date,time}=obj;
-        
-//         const creatAttendance= await attendanceModel.create(obj)
-//         res.status(201).send({status:true,data:creatAttendance}) 
-//     }
-//     catch (error) {
-//         res.status(500).send({ status: false, Error: error.message })
-//      }
-// }
-
-// module.exports={creatAttendance}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -58,18 +11,20 @@ const firstDay = async function (req, res) {
         const requestBody = req.body
 
         if (vfy.isEmptyObject(requestBody)) return res.status(400).send({ status: false, Message: "Invalid request parameters, Please provide  details for attendence" })
-        let { employId,time } = requestBody
+        let { employId, entryTime, exitTime } = requestBody
 
+        if (!vfy.isEmptyVar(entryTime)) return res.status(400).send({ status: false, message: "entryTime is required" });
+        if (!vfy.isEmptyVar(exitTime)) return res.status(400).send({ status: false, message: "exitTime is required" });
         // employ id validation
         if (vfy.isEmptyVar(employId)) return res.status(400).send({ status: false, message: "employId is required" });
         if (!vfy.isValidObjectId(employId)) return res.status(400).send({ status: false, message: "Not a valid employ id" });
         let findEmploy = await employModel.findById(employId)
         if (!findEmploy) return res.status(404).send({ status: false, Message: "This id not in our database . Please register first" })
         let obj = {}
-        
-        obj.date=new Date().toISOString().split('T')[0]
-       obj.entryTime=time.entryTime
-       obj.exitTime=time.exitTime
+
+        obj.date = new Date().toISOString().split('T')[0]
+        obj.entryTime = entryTime
+        obj.exitTime = exitTime
 
 
         requestBody["time"] = obj
@@ -86,78 +41,58 @@ const firstDay = async function (req, res) {
 }
 
 
-const updateAttendence= async function(req,res){
-    try{
-        let employId=req.params.employId;
-        let data=req.body
-        let findAttendence=await attendanceModel.findOne({employId})
-        console.log(findAttendence)
+const updateAttendence = async function (req, res) {
+    try {
+        let employId = req.params.employId
+        let data = req.body
+        if (vfy.isEmptyObject(data)) return res.status(400).send({ status: false, Message: "Invalid request , Please provide  details for attendence" })
+
+        //   employ id validation 
+        if (vfy.isEmptyVar(employId)) return res.status(400).send({ status: false, message: "employId is required" });
+        if (!vfy.isValidObjectId(employId)) return res.status(400).send({ status: false, message: "Not a valid employ id" })
+
+        let findEmploy = await attendanceModel.findOne({ employId })
+        if (!findEmploy) return res.status(400).send({ status: false, message: "this employ is not register . please register first" })
+        let { entryTime, exitTime } = data
+        let obj = {}
+
+        obj.date = new Date().toISOString().split('T')[0]
+        let findAttendence = await attendanceModel.find(obj)
+        // if(findAttendence) return res.status(404).send({status:false,Message:"you already give your attendence"})
+        obj.entryTime = entryTime
+        obj.exitTime = exitTime
+
+
+        findEmploy.time.push(obj)
+
+        let up = await attendanceModel.findOneAndUpdate({ employId }, { "$push": { 'time': obj } }, { new: true })
+
+
+        res.status(201).send({ status: true, Message: "update successfully", data: up })
     }
-    catch(error){
+    catch (error) {
         res.status(500).send({ status: false, Error: error.message })
     }
 }
 
+const getEmployDetails = async function (req, res) {
+    try {
+        let data = req.params.date;//date formet :YYYY-MM-DD
+        if (vfy.isEmptyObject(data)) return res.status(400).send({ status: false, Message: "Invalid request , Please provide  details for attendence" })
+       
+     
+        let findAttendence = await attendanceModel.findOne({ data }).select({ employId: 1, _id: 0 })
+        var arr = [];
+        for (let i = 0; i < findAttendence.length; i++) {
+            let employ = findAttendence[0].employId
 
-const attendance=async function(req,res){
-    try{
-        let employId=req.params.employId
-        let data =req.body
-        let {date,entryTime,exitTime}=data;
-        let findEmploy=await attendanceModel.findOne({employId})
-        if(findEmploy == null){
-            let data2={
-                employId:employId,
-                attendance:{
-                    date:[date],
-                    entryTime:[entryTime],
-                    exitTime:[]
-                }
-            }
-            console.log("yes4")
-            const employ1=await attendanceModel.create(data2)
-            res.send({employ1})
-        }
-        
-        else{
-            let data5={
-                employId:employId,
-                attendance:{
-                    date:findEmploy.attendance.date,
-                    entryTime:findEmploy.attendance.entryTime,
-                    exitTime:findEmploy.attendance.exitTime.push(exitTime)
-                }
-            }
-            console.log("yes")
-            let findEmploy2=await attendanceModel.findOneAndUpdate({employId:employId},{data5},{new:true})
-            res.send(findEmploy2)
-        }
-        if(findEmploy.attendance.date.indexOf(date)==-1){
-            let data3={
-                employId:employId,
-                attendance:{
-                    date:findEmploy.attendance.date.push(date),
-                    entryTime:findEmploy.attendance.entryTime.push(entryTime),
-                    exitTime:findEmploy.attendance.exitTime
-                }
-            }
-            console.log("yes2")
-            const employ2=await attendanceModel.findOneAndUpdate({employId:employId},{data3},{new:true})
-            res.send(employ2)
-        }
-        else{
-            let data4={
-                employId:employId,
-                attendance:{
-                    date:findEmploy.attendance.date,
-                    entryTime:findEmploy.attendance.entryTime,
-                    exitTime:findEmploy.attendance.exitTime.push(exitTime)
-                }
-            }
-            console.log("yes3")
-            const employ3=await attendanceModel.findOneAndUpdate({employId:employId},{data4},{new:true})
-            res.send(employ3)
-        }
+            let findEmploy = await employModel.find({ employ }).select({ name: 1, _id: 1 })
+            let findAtt = await attendanceModel.find({ employ }).select({ time: 1, _id: 0 })
+
+            arr.push([findEmploy[i], findAtt[i]])
+   }
+
+        res.status(201).send({ status: true, Messege: "employ details", data: arr })
 
     }
     catch (error) {
@@ -166,24 +101,9 @@ const attendance=async function(req,res){
 }
 
 
-// const repeateAttendence=async function(req,res){
-//     try{
-//         let employId=req.params.employId
-//         let data=req.body
-//         const find=await attendanceModel.findOne({employId})
-        
-//         let repeate= await attendanceModel.findOneAndUpdate({employId},{$set:data},{new:true})
-//         res.send(repeate)
-
-//     }
-//     catch (error) {
-//         res.status(500).send({ status: false, Error: error.message })
-//     }
-// }
 
 
-
-module.exports = { firstDay ,updateAttendence,attendance}
+module.exports = { firstDay, updateAttendence, getEmployDetails }
 
 
 
