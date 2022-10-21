@@ -12,6 +12,9 @@ const firstDay = async function (req, res) {
 
         if (vfy.isEmptyObject(requestBody)) return res.status(400).send({ status: false, Message: "Invalid request parameters, Please provide  details for attendence" })
         let { employId, entryTime, exitTime } = requestBody
+        let findEmploy1 = await attendanceModel.findOne({ employId })
+        if(findEmploy1) return res.status(404).send({status:false,Message:"you already give your attendence"})
+
 
         if (!vfy.isEmptyVar(entryTime)) return res.status(400).send({ status: false, message: "entryTime is required" });
         if (!vfy.isEmptyVar(exitTime)) return res.status(400).send({ status: false, message: "exitTime is required" });
@@ -25,8 +28,7 @@ const firstDay = async function (req, res) {
         obj.date = new Date().toISOString().split('T')[0]
         obj.entryTime = entryTime
         obj.exitTime = exitTime
-
-
+       
         requestBody["time"] = obj
         console.log(requestBody)
         let createAttendance = await attendanceModel.create(requestBody)
@@ -58,7 +60,7 @@ const updateAttendence = async function (req, res) {
 
         obj.date = new Date().toISOString().split('T')[0]
         let findAttendence = await attendanceModel.find(obj)
-        // if(findAttendence) return res.status(404).send({status:false,Message:"you already give your attendence"})
+         if(findAttendence) return res.status(404).send({status:false,Message:"you already give your attendence"})
         obj.entryTime = entryTime
         obj.exitTime = exitTime
 
