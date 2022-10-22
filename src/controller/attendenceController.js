@@ -59,8 +59,8 @@ const attendence = async function (req, res) {
             obj.entryTime = entryTime;
             obj.exitTime = exitTime;
 
-            let up = await attendanceModel.findOneAndUpdate({ employId }, { "$push": { 'attendence': obj } }, { new: true })
-            return res.status(200).send({ status: false.valueOf, Message: "attendence updeate", data: up })
+            let updateAttendence = await attendanceModel.findOneAndUpdate({ employId }, { "$push": { 'attendence': obj } }, { new: true })
+            return res.status(200).send({ status: false.valueOf, Message: "attendence updeate", data: updateAttendence })
         }
         else{
             
