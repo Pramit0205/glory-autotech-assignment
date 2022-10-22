@@ -3,110 +3,95 @@ const attendanceModel = require("../model/attendanceModel");
 const employModel = require("../model/employModel")
 const vfy = require("../utils/validation")
 const ObjectId = require("mongoose").Types.ObjectId;
+const mongoose=require('mongoose')
 
 
 
-const firstDay = async function (req, res) {
+
+const attendence = async function (req, res) {
     try {
-        const requestBody = req.body
+        let data = req.body;
+        // request bodu validation
+        if (vfy.isEmptyObject(data)) return res.status(400).send({ status: false, Message: "Invalid request parameters, Please provide  details for attendence" })
 
-        if (vfy.isEmptyObject(requestBody)) return res.status(400).send({ status: false, Message: "Invalid request parameters, Please provide  details for attendence" })
-        let { employId, entryTime, exitTime } = requestBody
-        let findEmploy1 = await attendanceModel.findOne({ employId })
-        if(findEmploy1) return res.status(404).send({status:false,Message:"you already give your attendence"})
+        let { date, attendence ,isDelete} = data;
+        let employId=attendence.employId
+        let entryTime=attendence.entryTime
+        let exitTime=attendence.exitTime
+        // isDelete validation 
+        if(isDelete === true) return res.status(404).send({ status: false, Message: "you can't do isDelete is true " })
 
+        //  date valiadation 
+        if (vfy.isEmptyVar(date)) return res.status(404).send({ status: false, Message: "pleasee privide the date to take attendence" })
+        if (!vfy.isValiddate(date)) return res.status(404).send({ status: false, Message: "it's not a valid date format, date should be in (YYYY-MM-DD) this format" })
 
-        if (!vfy.isEmptyVar(entryTime)) return res.status(400).send({ status: false, message: "entryTime is required" });
-        if (!vfy.isEmptyVar(exitTime)) return res.status(400).send({ status: false, message: "exitTime is required" });
-        // employ id validation
-        if (vfy.isEmptyVar(employId)) return res.status(400).send({ status: false, message: "employId is required" });
-        if (!vfy.isValidObjectId(employId)) return res.status(400).send({ status: false, message: "Not a valid employ id" });
-        let findEmploy = await employModel.findById(employId)
-        if (!findEmploy) return res.status(404).send({ status: false, Message: "This id not in our database . Please register first" })
-        let obj = {}
-
-        obj.date = new Date().toISOString().split('T')[0]
-        obj.entryTime = entryTime
-        obj.exitTime = exitTime
-       
-        requestBody["time"] = obj
-        console.log(requestBody)
-        let createAttendance = await attendanceModel.create(requestBody)
-        res.status(201).send({ status: true, Message: "checkIn time is created", data: createAttendance })
-
-
-    }
-    catch (error) {
-        res.status(500).send({ status: false, Error: error.message })
-    }
-
-}
-
-
-const updateAttendence = async function (req, res) {
-    try {
-        let employId = req.params.employId
-        let data = req.body
-        if (vfy.isEmptyObject(data)) return res.status(400).send({ status: false, Message: "Invalid request , Please provide  details for attendence" })
-
-        //   employ id validation 
+        // employId  validation 
         if (vfy.isEmptyVar(employId)) return res.status(400).send({ status: false, message: "employId is required" });
         if (!vfy.isValidObjectId(employId)) return res.status(400).send({ status: false, message: "Not a valid employ id" })
 
-        let findEmploy = await attendanceModel.findOne({ employId })
-        if (!findEmploy) return res.status(400).send({ status: false, message: "this employ is not register . please register first" })
-        let { entryTime, exitTime } = data
-        let obj = {}
+        // check employ is regester on not by employ id
+        var id = mongoose.Types.ObjectId(employId);
+        let checkEmploy=await employModel.findById(id)
+        if(!checkEmploy) return res.status(404).send({status:false,Message:"this employ id is not register , please register first"})
 
-        obj.date = new Date().toISOString().split('T')[0]
-        let findAttendence = await attendanceModel.find(obj)
-         if(findAttendence) return res.status(404).send({status:false,Message:"you already give your attendence"})
-        obj.entryTime = entryTime
-        obj.exitTime = exitTime
+        // entry time 
+        if (vfy.isEmptyVar(entryTime)) return res.status(400).send({ status: false, message: "entryTime is required" });
+        if (!vfy.isValidString(entryTime)) return res.status(400).send({ status: false, message: "entryTime is not in a valid string formet " });
 
+        // exit time validation 
+        if (vfy.isEmptyVar(exitTime)) return res.status(400).send({ status: false, message: "exitTime is required" });
+        if (!vfy.isValidString(exitTime)) return res.status(400).send({ status: false, message: "exitTime is not in a valid string formet " });
 
-        findEmploy.time.push(obj)
-
-        let up = await attendanceModel.findOneAndUpdate({ employId }, { "$push": { 'time': obj } }, { new: true })
-
-
-        res.status(201).send({ status: true, Message: "update successfully", data: up })
-    }
-    catch (error) {
-        res.status(500).send({ status: false, Error: error.message })
-    }
-}
-
-const getEmployDetails = async function (req, res) {
-    try {
-        let data = req.params.date;//date formet :YYYY-MM-DD
-        if (vfy.isEmptyObject(data)) return res.status(400).send({ status: false, Message: "Invalid request , Please provide  details for attendence" })
+        let findDate = await attendanceModel.findOne({ date: date })
        
-     
-        let findAttendence = await attendanceModel.findOne({ data }).select({ employId: 1, _id: 0 })
-        var arr = [];
-        for (let i = 0; i < findAttendence.length; i++) {
-            let employ = findAttendence[0].employId
+        
+        // if date is present so we have to update the employ attendence  else create new document for this date 
+        if (findDate) {
+            let i = 0
+            while (i < findDate.attendence.length) {
+                if (findDate.attendence[i].employId == employId) {
+                    return res.status(404).send({ status: false, Message: "you already take attendence of this employ" })
+                }
+                i++
+            }
+            let obj = {}
+            obj.employId = employId;
+            obj.entryTime = entryTime;
+            obj.exitTime = exitTime;
 
-            let findEmploy = await employModel.find({ employ }).select({ name: 1, _id: 1 })
-            let findAtt = await attendanceModel.find({ employ }).select({ time: 1, _id: 0 })
-
-            arr.push([findEmploy[i], findAtt[i]])
-   }
-
-        res.status(201).send({ status: true, Messege: "employ details", data: arr })
+            let up = await attendanceModel.findOneAndUpdate({ employId }, { "$push": { 'attendence': obj } }, { new: true })
+            return res.status(200).send({ status: false.valueOf, Message: "attendence updeate", data: up })
+        }
+        else{
+            
+            let createAttendance = await attendanceModel.create(data)
+            return res.status(201).send({ status: false, Message: "attendence create for today", data: createAttendance })
+        }
+       
 
     }
     catch (error) {
-        res.status(500).send({ status: false, Error: error.message })
+        res.status(500).send({ status: false, error: error.message })
     }
 }
 
+const getAttendence= async function(req,res){
+    try{
+        let date= req.params.date;
+        if (vfy.isEmptyVar(date)) return res.status(404).send({ status: false, Message: "pleasee privide the date to take attendence" })
+        if (!vfy.isValiddate(date)) return res.status(404).send({ status: false, Message: "it's not a valid date format, date should be in (YYYY-MM-DD) this format" })
+
+            let attendenceDetails=await attendanceModel.findOne({date:date,isDelete:false}).select({_id:0,createdAt:0,updatedAt:0,__v:0,isDelete:0})
+            if(!attendenceDetails) return res.status(404).send({status:false,Message:"this day's attendence is not available "})
+           res.status(200).send({status:false,Message:"attendence details",data:attendenceDetails})
 
 
-
-module.exports = { firstDay, updateAttendence, getEmployDetails }
-
+    }
+    catch(error){
+        res.status(500).send({status:false,error:error.message})
+    }
+}
+module.exports = { attendence , getAttendence }
 
 
 

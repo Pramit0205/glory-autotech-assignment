@@ -30,7 +30,7 @@ const createEmploy = async function (req, res) {
         // date if birth validation
         if (!dob) return res.status(400).send({ status: false, Message: "dob is required" });
         if (vfy.isEmptyVar(dob)) return res.status(400).send({ status: false, Message: "dob is required and should not be an empty string" });
-        if (!vfy.isValiddate(dob)) return res.status(400).send({ status: false, Message: "Enter a valid dob" });
+        if (!vfy.isValiddate(dob)) return res.status(400).send({ status: false, Message: "Enter a valid dob, the date formate is(YYYY-MM-DD)" });
 
         // experience validation 
         if (experience) {
@@ -39,7 +39,7 @@ const createEmploy = async function (req, res) {
         }
         // joining date
         if (joiningDate) {
-            if (!vfy.isValiddate(joiningDate)) return res.status(404).send({ status: false, Message: "it's not a valid date format" })
+            if (!vfy.isValiddate(joiningDate)) return res.status(404).send({ status: false, Message: "it's not a valid date format,date should be in (YYYY-MM-DD) this format" })
         }
 
         // salary validation 
