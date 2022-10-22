@@ -78,6 +78,8 @@ const attendence = async function (req, res) {
 const getAttendence= async function(req,res){
     try{
         let date= req.params.date;
+        
+        // date validation
         if (vfy.isEmptyVar(date)) return res.status(404).send({ status: false, Message: "pleasee privide the date to take attendence" })
         if (!vfy.isValiddate(date)) return res.status(404).send({ status: false, Message: "it's not a valid date format, date should be in (YYYY-MM-DD) this format" })
 
